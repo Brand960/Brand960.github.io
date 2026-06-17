@@ -1,40 +1,45 @@
 ---
-layout: stm32/h7_boot_behavior
-title: stm32h750vbt6启动流程
-date: 2026-06-17 23:00:57
-tags:
+title: stm32h750vbt6 启动流程
+date: 2026-06-18 06:36:04
+tags: stm32
 academia: true
 ---
-# stm32h750vbt6 启动流程
 
 ## 上电/复位
 
 完整启动时序：稳压器/带隙稳定 → VOS3 → HSI起振 → FL_PWR Flash上电 → FL_OPTB 选项字节加载 → CPU运行（HSI时钟起振作为复位默认源，后续可SystemInit修改）
+<!-- more -->
 
-![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/enable1.png)
-![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/enable.png)
+![](enable1.png)
+![](enable.png)
+
+> 参考：`stm32h750-参考手册reference.pdf`（RM0433）—— 复位与时钟控制（RCC）/ 电源控制器（PWR）章节中的“上电复位（POR/PDR、带隙稳定）/ 系统复位”
 
 ## 启动配置
 
 锁存BOOT引脚电平，选择启动地址源，自举地址（Boot Address）是复位后向量表基地址。CPU 据此读取初始 MSP 与复位向量入口
 
-![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/bootconfig1.png)
-![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/bootconfig2.png)
+![](bootconfig1.png)
+![](bootconfig2.png)
 
 BOOT_ADD数值来源为Optional Bytes，Flash 接口寄存器自动从 Flash 加载用户选项字节，每个字段都是 16 位位宽
 
-![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/optional_bytes0.png)
-![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/optional_bytes.png)
-![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/optional_bytes1.png)
+![](optional_bytes0.png)
+![](optional_bytes.png)
+![](optional_bytes1.png)
+
+> 参考：`stm32h750-参考手册reference.pdf`（RM0433）—— 嵌入式 Flash 存储器接口（FLASH）章节“Boot configuration（启动配置）”与“Option bytes（选项字节，BOOT_ADDx）”；另见 `stm32h750-数据手册datasheet.pdf`（DS12556）§3.4 Boot modes
 
 ### BOOT_ADD存储寄存器位置
 
 根据Option Bytes中 BOOT_ADDx 的值，更新 FLASH_BOOT_CURR 寄存器，进行地址有效性检查
 
-![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/flashinterfacereg.png)
-![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/bootaddr_busmatrix.png)
-![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/bootaddreg0.png)
-![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/bootaddreg.png)
+![](flashinterfacereg.png)
+![](bootaddr_busmatrix.png)
+![](bootaddreg0.png)
+![](bootaddreg.png)
+
+> 参考：`stm32h750-参考手册reference.pdf`（RM0433）—— Flash 存储器接口寄存器映射中的 `FLASH_BOOT_CURR`（当前启动地址寄存器，地址 0x5200_2040），及其对 BOOT_ADDx 的地址有效性检查
 
 ### 查询BOOT_ADD当前值
 
@@ -75,19 +80,25 @@ $ mdw 0x52002040
 #                  BOOT_ADD0[15:0]=0x0080(Flash 0x08000000)
 ```
 
+> 参考：基于 `stm32h750-参考手册reference.pdf`（RM0433）`FLASH_BOOT_CURR` 寄存器地址（0x5200_2040）
+
 ## CPU核心寄存器
 
-![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/core_registers.png)
+![](core_registers.png)
+
+> 参考：`arm-v7-m编程手册programming.pdf`（PM0253，STM32F7/H7 Cortex®-M7 processor programming manual）—— 第 2 章“Programmer's model”核心寄存器汇总
 
 ### 控制寄存器
 
 bit[1]控制SP寄存器为MSP或PSP
 
-![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/MSP&PSP.png)
+![](MSP&PSP.png)
 
 控制寄存器bit[2]表示是否激活了浮点上下文（复位为 0）。使用 MSR 指令将 CONTROL.SPSEL 位（当前活动堆栈指针位）设置为 1 可将线程模式中使用的堆栈指针切换到 PSP(Handler 模式下写 SPSEL=1 被忽略，仅 Thread 模式有效)
 
-![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/control_register.png)
+![](control_register.png)
+
+> 参考：`arm-v7-m编程手册programming.pdf`（PM0253）—— CONTROL register / Figure 7 “Control bit assignments”（bit[1] SPSEL 选 MSP/PSP；bit[2] FPCA 浮点上下文，复位为 0）；Handler 模式写 SPSEL=1 被忽略，仅 Thread 模式有效
 
 ### EPSR
 
@@ -98,18 +109,22 @@ EPSR（Execution Program Status Register，执行程序状态寄存器）是 ARM
 
 在.s启动文件中开头使用`.thumb`声明thumb指令集编译即可确保Thumb 函数地址的 LSB 置 1，用于指示 CPU 进入 Thumb 状态
 
+> 参考：`arm-v7-m编程手册programming.pdf`（PM0253）—— Table 6 “EPSR bit assignments”（T 位 / ICI·IT 字段）；复位流程见 `cortex-armv7-m文档.pdf`（ARMv7-M Architecture Reference Manual / DDI 0403）Reset 伪代码
+
 ### VTOR
 
 向量表（偏移）寄存器VTOR结构说明
 
-![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/VTOR.png)
+![](VTOR.png)
+
+> 参考：`arm-v7-m编程手册programming.pdf`（PM0253）—— Vector table offset register（VTOR）/ Table 54 “VTOR bit assignments”
 
 ## reset behavior
 
 在 armv7-m 架构手册中有关于 reset 流程的伪代码,控制寄存器设置 bit[2]=0(FP inactive)与 bit[0]=0(privileged)
 
-![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/reset_behavior.png)
-![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/reset_behavior1.png)
+![](reset_behavior.png)
+![](reset_behavior1.png)
 
 1  控制寄存器bit[1]设为0，即栈寄存器SP使用MSP
 2 `bits(32) vectortable = VTOR<31:7>:'0000000'` 取 VTOR向量表偏移寄存器 的高 25 位、低位补 0，得到向量表基址。
@@ -119,10 +134,10 @@ EPSR（Execution Program Status Register，执行程序状态寄存器）是 ARM
 
 以下为向量表的内容结构及对应偏移量
 
-![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/vector_table.png)
+![](vector_table.png)
 
 **注意** 手册中提到 Reset Exception 是最高优先级的异常,走专属复位序列（不复栈、不保存现场）,实际上复位不经过 NVIC 嵌套向量中断控制器的异常优先级仲裁，是异步的特权复位序列。
 
-![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/reset_exception.png)
+![](reset_exception.png)
 
 总而言之，在 STM32H7 上，硬件依据 BOOT_ADD（选项字节）把 VTOR 复位为自举存储区的物理地址， CPU 直接在该物理地址读取初始 MSP 与复位向量入口。.s和.ld文件会固定在开头指定地址烧入Reset_Handler的逻辑，进入 Reset_Handler 后，系统在软件执行初始化阶段（通常在 SystemInit() 函数中）会显式地将实际物理地址写入 VTOR 寄存器 `SCB->VTOR = FLASH_BASE;`，后续所有的中断响应（如定时器、串口中断）都会直接去FLASH_BASE物理空间寻找。

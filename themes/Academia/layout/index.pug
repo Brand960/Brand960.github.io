@@ -2,6 +2,19 @@ extends includes/layout
 
 block content
     .page(itemscope itemtype='http://schema.org/CreativeWork')
-          each article in page.posts.data
-              if article.academia
-                  article!= article.content
+        each article in page.posts.data
+            if article.academia
+                article.post-list
+                    h2.post-title
+                        a(href=url_for(article.path))!= article.title
+                    if article.excerpt
+                        .post-excerpt!= article.excerpt
+                        p.more-link
+                            a(href=url_for(article.path)) 阅读全文 →
+                    else
+                        != article.content
+        != paginator({ prev_text: '« 上一页', next_text: '下一页 »' })
+        //-   each article in page.posts.data
+        //-       if article.academia
+        //-         artcle.tile!= article.title
+                //-   article!= article.content

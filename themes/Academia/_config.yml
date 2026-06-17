@@ -11,8 +11,7 @@ since: 2026
 # #title 为页内跳转，单页模式
 # 可以选择外链或其他页面
 menu:
-  Publications: /#Publications
-  STM32: /stm32
+  Publications: /Publications
   # Blog: https://phower.me
 
 # flink picture will load if avator link calls on error
@@ -33,16 +32,16 @@ social_links:
   # fab fa-weibo: /
   fab fa-weixin: /SaltcityYue
   fab fa-qq: /4143*****
-  fas fa-envelope: /brand960@foxmail.com
+  fas fa-envelope: /yuepeng2025@njtech.edu.cn
   # fas fa-rss: /  #rss
 
 # Additional social_links，额外添加自定义链接，可显示链接名称
 # name: url || icon_name
 e_social:
-  enable: false
+  enable: true
 e_social_links:
-  Google Scholar: / || fas fa-graduation-cap
-  ORCID: / || fab fa-orcid
+  # Google Scholar: / || fas fa-graduation-cap
+  ORCID: https://orcid.org/0000-0002-3088-8333 || fab fa-orcid
 
 # CV download link
 cv_dl:
