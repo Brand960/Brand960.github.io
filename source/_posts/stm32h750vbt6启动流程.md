@@ -3,6 +3,7 @@ layout: stm32/h7_boot_behavior
 title: stm32h750vbt6启动流程
 date: 2026-06-17 23:00:57
 tags:
+academia: true
 ---
 # stm32h750vbt6 启动流程
 
@@ -10,30 +11,30 @@ tags:
 
 完整启动时序：稳压器/带隙稳定 → VOS3 → HSI起振 → FL_PWR Flash上电 → FL_OPTB 选项字节加载 → CPU运行（HSI时钟起振作为复位默认源，后续可SystemInit修改）
 
-![](img\enable1.png)
-![](img\enable.png)
+![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/enable1.png)
+![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/enable.png)
 
 ## 启动配置
 
 锁存BOOT引脚电平，选择启动地址源，自举地址（Boot Address）是复位后向量表基地址。CPU 据此读取初始 MSP 与复位向量入口
 
-![](img\bootconfig1.png)
-![](img\bootconfig2.png)
+![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/bootconfig1.png)
+![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/bootconfig2.png)
 
 BOOT_ADD数值来源为Optional Bytes，Flash 接口寄存器自动从 Flash 加载用户选项字节，每个字段都是 16 位位宽
 
-![](img\optional_bytes0.png)
-![](img\optional_bytes.png)
-![](img\optional_bytes1.png)
+![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/optional_bytes0.png)
+![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/optional_bytes.png)
+![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/optional_bytes1.png)
 
 ### BOOT_ADD存储寄存器位置
 
 根据Option Bytes中 BOOT_ADDx 的值，更新 FLASH_BOOT_CURR 寄存器，进行地址有效性检查
 
-![](img\flashinterfacereg.png)
-![](img\bootaddr_busmatrix.png)
-![](img\bootaddreg0.png)
-![](img\bootaddreg.png)
+![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/flashinterfacereg.png)
+![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/bootaddr_busmatrix.png)
+![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/bootaddreg0.png)
+![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/bootaddreg.png)
 
 ### 查询BOOT_ADD当前值
 
@@ -76,17 +77,17 @@ $ mdw 0x52002040
 
 ## CPU核心寄存器
 
-![](img\core_registers.png)
+![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/core_registers.png)
 
 ### 控制寄存器
 
 bit[1]控制SP寄存器为MSP或PSP
 
-![](img\MSP&PSP.png)
+![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/MSP&PSP.png)
 
 控制寄存器bit[2]表示是否激活了浮点上下文（复位为 0）。使用 MSR 指令将 CONTROL.SPSEL 位（当前活动堆栈指针位）设置为 1 可将线程模式中使用的堆栈指针切换到 PSP(Handler 模式下写 SPSEL=1 被忽略，仅 Thread 模式有效)
 
-![](img\control_register.png)
+![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/control_register.png)
 
 ### EPSR
 
@@ -101,14 +102,14 @@ EPSR（Execution Program Status Register，执行程序状态寄存器）是 ARM
 
 向量表（偏移）寄存器VTOR结构说明
 
-![](img\VTOR.png)
+![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/VTOR.png)
 
 ## reset behavior
 
 在 armv7-m 架构手册中有关于 reset 流程的伪代码,控制寄存器设置 bit[2]=0(FP inactive)与 bit[0]=0(privileged)
 
-![](img\reset_behavior.png)
-![](img\reset_behavior1.png)
+![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/reset_behavior.png)
+![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/reset_behavior1.png)
 
 1  控制寄存器bit[1]设为0，即栈寄存器SP使用MSP
 2 `bits(32) vectortable = VTOR<31:7>:'0000000'` 取 VTOR向量表偏移寄存器 的高 25 位、低位补 0，得到向量表基址。
@@ -118,10 +119,10 @@ EPSR（Execution Program Status Register，执行程序状态寄存器）是 ARM
 
 以下为向量表的内容结构及对应偏移量
 
-![](img\vector_table.png)
+![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/vector_table.png)
 
 **注意** 手册中提到 Reset Exception 是最高优先级的异常,走专属复位序列（不复栈、不保存现场）,实际上复位不经过 NVIC 嵌套向量中断控制器的异常优先级仲裁，是异步的特权复位序列。
 
-![](img\reset_exception.png)
+![](https://raw.githubusercontent.com/brand960/brand960.github.io/master/source/img/h7_boot_behavior/reset_exception.png)
 
 总而言之，在 STM32H7 上，硬件依据 BOOT_ADD（选项字节）把 VTOR 复位为自举存储区的物理地址， CPU 直接在该物理地址读取初始 MSP 与复位向量入口。.s和.ld文件会固定在开头指定地址烧入Reset_Handler的逻辑，进入 Reset_Handler 后，系统在软件执行初始化阶段（通常在 SystemInit() 函数中）会显式地将实际物理地址写入 VTOR 寄存器 `SCB->VTOR = FLASH_BASE;`，后续所有的中断响应（如定时器、串口中断）都会直接去FLASH_BASE物理空间寻找。
