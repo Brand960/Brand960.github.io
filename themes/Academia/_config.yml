@@ -3,7 +3,7 @@ favicon: /img/favicon.png
 avatar: /img/avatar.jpg
 # if author sets in hexo_config, this string doesn't work
 author: 'Yue'
-author_bio: ''
+author_bio: 'NJTech phD Student,Unemployed Engineer'
 
 since: 2026
 
@@ -52,7 +52,7 @@ cv_dl:
 # Box-shadow
 # display box-shadow on page or not
 box_shadow:
-  enable: false
+  enable: true
 
 # CDN
 # 根据需要自行添加js/css
